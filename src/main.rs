@@ -8,7 +8,7 @@ fn main() {
     // Read the cipher text, and a dictionary
     let cipher = read_to_string("challenge.txt")
         .expect("failed to read cipher text at challenge.txt");
-    let dict = read_to_string("/usr/share/dict/words")
+    let dict = read_to_string("/usr/share/dict/british-english-insane")
         .expect("failed to read dictionary at /usr/share/dict/words");
 
     // Collect uppercase dictionary words in a vector
@@ -22,14 +22,6 @@ fn main() {
         .collect();
     dict.sort_unstable();
 
-    // Determine the max word length
-    let max_length = dict
-        .iter()
-        .map(|word| word.len())
-        .max()
-        .unwrap();
-    println!("Max word length: {}", max_length);
-
     // Get the index of the last character of the 4th word
     let upto = cipher
     .chars()
@@ -40,77 +32,63 @@ fn main() {
         .expect("cannot find counted word")
         .0;
 
-    // Brute force, increase the number of chiper indices each time
-    (2..max_length)
-        .into_par_iter()
-        .for_each(|s| {
-            let mut shifts = vec![0u8; s];
+    dict.par_iter()
+        .filter(|word| word.chars().all(|c| c.is_alphabetic()))
+        .for_each(|key| {
+            // Build the shifting vector
+            let shifts = key.chars()
+                .map(|c| c as u8 - 'A' as u8)
+                .collect();
 
-            // Tell we're attempting a given shift
-            println!("ATTEMPTING SHIFTS: {}", s);
+            // Shift
+            let output: String = shift_input(&cipher, &shifts);
 
-            // Make sure there is a word in the dictionary with this length
-            if dict.iter().filter(|word| word.len() == s).next().is_none() {
-                println!("SKIP SHIFTS {}, NO WORD WITH LENGTH", s);
+            // Loop through the words
+            let found = output
+                .split_terminator(|c| c == ' ' || c == '\n')
+                .filter(|word| word.len() >= 4)
+                .take(16)
+                //.inspect(|word| println!("FOUND WORD: {}", word))
+                .filter(|word| dict.binary_search(word).is_ok())
+                //.inspect(|word| println!("FOUND WORD: {}", word))
+                .count() >= 5;
+
+            if found {
+                println!("==================");
+                println!("HORRAAYYYY!!!!");
+                println!("KEY: {}", key);
+                println!("SHIFTS: {:?}", shifts);
+                println!("TRY: {:?}", &output[0..upto]);
+                println!("==================");
             }
-
-            shift_combinations(&mut shifts, 0, |shifts| {
-                // Build the key
-                let key: String = shifts.iter()
-                    .map(|c| ('A' as u8 + c) as char)
-                    .collect();
-                if dict.binary_search(&key.as_str()).is_err() {
-                    return;
-                }
-
-                // Shift
-                let output: String = shift_input(&cipher, &shifts);
-
-                // Loop through the words
-                let found = output
-                    .split_terminator(|c| c == ' ' || c == '\n')
-                    .filter(|word| word.len() > 4)
-                    .take(2)
-                    .filter(|word| dict.binary_search(word).is_ok())
-                    .inspect(|word| println!("FOUND WORD: {}", word))
-                    .count() >= 2;
-
-                if found {
-                    println!("==================");
-                    println!("HORRAAYYYY!!!!");
-                    println!("SHIFTS: {:?}", shifts);
-                    println!("TRY: {:?}", &output[0..upto]);
-                    println!("==================");
-                }
-            });
         });
 
     println!("DONE");
 }
 
-/// Generate all possible shift combinations in the given `shifts` vector.
-/// The current shifting index is specified with `i` used for recursion.
-/// Therefore `0` should be specified for `i` when calling with to generate
-/// combinations.
-/// The closure `try` is invoked with each combination.
-fn shift_combinations<F>(shifts: &mut Vec<u8>, i: usize, try: F)
-    where F: Fn(&Vec<u8>) + Copy
-{
-    // Loop through all shift combinations for the current shift index
-    for amount in 0..26 {
-        shifts[i] = amount;
+// /// Generate all possible shift combinations in the given `shifts` vector.
+// /// The current shifting index is specified with `i` used for recursion.
+// /// Therefore `0` should be specified for `i` when calling with to generate
+// /// combinations.
+// /// The closure `try` is invoked with each combination.
+// fn shift_combinations<F>(shifts: &mut Vec<u8>, i: usize, try: F)
+//     where F: Fn(&Vec<u8>) + Copy
+// {
+//     // Loop through all shift combinations for the current shift index
+//     for amount in 0..26 {
+//         shifts[i] = amount;
 
-        // Walk through remaining index combinations
-        if i < shifts.len() - 1 {
-        	shift_combinations(shifts, i + 1, try);
-        }
+//         // Walk through remaining index combinations
+//         if i < shifts.len() - 1 {
+//         	shift_combinations(shifts, i + 1, try);
+//         }
 
-        // Try the combination when the last index is set
-        if i == shifts.len() - 1 {
-            try(shifts);
-        }
-    }
-}
+//         // Try the combination when the last index is set
+//         if i == shifts.len() - 1 {
+//             try(shifts);
+//         }
+//     }
+// }
 
 /// Shift the given input, by the given indices.
 /// Each alpha character increases the current index by one,
