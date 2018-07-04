@@ -1,4 +1,8 @@
+extern crate rayon;
+
 use std::fs::read_to_string;
+
+use rayon::prelude::*;
 
 fn main() {
     // Read the cipher text, and a dictionary
@@ -18,6 +22,14 @@ fn main() {
         .collect();
     dict.sort_unstable();
 
+    // Determine the max word length
+    let max_length = dict
+        .iter()
+        .map(|word| word.len())
+        .max()
+        .unwrap();
+    println!("Max word length: {}", max_length);
+
     // Get the index of the last character of the 4th word
     let upto = cipher
     .chars()
@@ -29,30 +41,51 @@ fn main() {
         .0;
 
     // Brute force, increase the number of chiper indices each time
-    for s in 2..100 {
-        let mut shifts = vec![0u8; s];
+    (2..max_length)
+        .into_par_iter()
+        .for_each(|s| {
+            let mut shifts = vec![0u8; s];
 
-        // Tell we're attempting a given shift
-        println!("ATTEMPTING SHIFTS: {}", s);
+            // Tell we're attempting a given shift
+            println!("ATTEMPTING SHIFTS: {}", s);
 
-        shift_combinations(&mut shifts, 0, |shifts| {
-            // Shift
-            let output: String = shift_input(&cipher, &shifts);
-
-            // Loop through the words
-            let found = output
-                .split_terminator(|c| c == ' ' || c == '\n')
-                .filter(|word| word.len() > 4)
-                .take(2)
-                .filter(|word| dict.binary_search(word).is_ok())
-                .inspect(|word| println!("FOUND WORD: {}", word))
-                .count() >= 2;
-
-            if found {
-                println!("TRY: {:?}", &output[0..upto]);
+            // Make sure there is a word in the dictionary with this length
+            if dict.iter().filter(|word| word.len() == s).next().is_none() {
+                println!("SKIP SHIFTS {}, NO WORD WITH LENGTH", s);
             }
+
+            shift_combinations(&mut shifts, 0, |shifts| {
+                // Build the key
+                let key: String = shifts.iter()
+                    .map(|c| ('A' as u8 + c) as char)
+                    .collect();
+                if dict.binary_search(&key.as_str()).is_err() {
+                    return;
+                }
+
+                // Shift
+                let output: String = shift_input(&cipher, &shifts);
+
+                // Loop through the words
+                let found = output
+                    .split_terminator(|c| c == ' ' || c == '\n')
+                    .filter(|word| word.len() > 4)
+                    .take(2)
+                    .filter(|word| dict.binary_search(word).is_ok())
+                    .inspect(|word| println!("FOUND WORD: {}", word))
+                    .count() >= 2;
+
+                if found {
+                    println!("==================");
+                    println!("HORRAAYYYY!!!!");
+                    println!("SHIFTS: {:?}", shifts);
+                    println!("TRY: {:?}", &output[0..upto]);
+                    println!("==================");
+                }
+            });
         });
-    }
+
+    println!("DONE");
 }
 
 /// Generate all possible shift combinations in the given `shifts` vector.

@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["timvisee <timvisee@gmail.com>"]
 
 [dependencies]
+rayon = "1.0"
