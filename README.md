@@ -15,37 +15,13 @@ same dictionary to test whether the attempted key may be valid.
 
 Yes, this is a brute force attack. Implementing some form of statistical
 analysis on this cipher text would probably perform much better. This is however
-a fairly simple implementation which is awesome. Also, if the assumption of the
-key and the decrypted text being British English was incorrect, the program
-wouldn't be able to find the correct key. The implementation does successfully
-find the key however, therefore I didn't implement a more complex solution.
+a fairly simple implementation which is awesome in it's own way. Also, if the
+assumption of the key and the decrypted text being British English was
+incorrect, the program wouldn't be able to find the correct key. The
+implementation does successfully find the key however, therefore I didn't
+implement a more complex solution.
 
-For a benchmark, see [this](#benchmark) section.
-
-## Performance
-To keep the implementation of this solver as performant as possible, I've done
-the following things:
-
-- **Rust:** I've used the Rust programming language as it's amazingly quick for
-  the high-level abstractions and features it provides.
-  This implementation proves that once again :smiley:.
-- **Dictionary:** a dictionary attack is used to minimize the number of brute
-  force attempts.
-- **Concurrency:** all brute force attempts are spread over all available CPU
-  cores.
-- **Lazy:** while brute forcing lazy iterators are used to only shift
-  characters being looked at while searching for a possible solution, instead
-  of shifting the whole ciphertext each attempt.
-- **Limited success checks:** for each decryption attempt only the first 8 words
-  are checked against a provided dictionary, to check for a possible successful
-  key. Because of this only a fairly limited selection of the ciphertext is
-  decrypted. The dictionary is checked using binary search.
-- **Minimal copying:** the number of memory allocations due to copying is
-  minimized during decryption attempts.
-- **LTO:** link time optimizations are enabled during compilation of release
-  builds.
-- **Vectorization:** code is optimized to allow compiler vectorization as much
-  as possible to fully utilize a CPU core.
+For a benchmark, see the [benchmark](#benchmark) section below.
 
 ## Benchmark
 Here is a benchmark for this implementation on the challenge
@@ -73,9 +49,34 @@ a dictionary and an unspecified key length.
 I estimate that this attack would complete in about 1 day for this ciphertext,
 although I only let it run for half an hour.
 
+## Performance
+To keep the implementation of this solver as performant as possible, I've done
+the following things:
+
+- **Rust:** I've used the Rust programming language as it's amazingly quick for
+  the high-level abstractions and features it provides.
+  This implementation proves that once again :smiley:.
+- **Dictionary:** a dictionary attack is used to minimize the number of brute
+  force attempts.
+- **Concurrency:** all brute force attempts are spread over all available CPU
+  cores.
+- **Lazy:** while brute forcing lazy iterators are used to only shift
+  characters being looked at while searching for a possible solution, instead
+  of shifting the whole ciphertext each attempt.
+- **Limited success checks:** for each decryption attempt only the first 8 words
+  are checked against a provided dictionary, to check for a possible successful
+  key. Because of this only a fairly limited selection of the ciphertext is
+  decrypted. The dictionary is checked using binary search.
+- **Minimal copying:** the number of memory allocations due to copying is
+  minimized during decryption attempts.
+- **LTO:** link time optimizations are enabled during compilation of release
+  builds.
+- **Vectorization:** code is optimized to allow compiler vectorization as much
+  as possible to fully utilize a CPU core.
+
 ## Usage
-To run this solver, first make sure [Rust][rust] nightly (`v1.28` or higher) is
-installed on your system which may be done using [rustup][rustup].
+To run this solver, first make sure [Rust][rust] (`nightly`, `v1.28` or higher)
+is installed on your system which may be done using [rustup][rustup].
 
 Run the following commands (Linux/macOS) to compile and run the solver:
 
@@ -102,7 +103,7 @@ This project is released under the GNU GPL-3.0 license.
 Check out the [LICENSE](LICENSE) file for more information. 
 
 The included [ciphertext](./ciphertext.txt) was provided by the TU Delft.  
-The included [dictionary](./dictionary.txt) originates from [SCOWL][scowl]
+The included [dictionary](./dictionary.txt) originates from [SCOWL][scowl].
 
 
 [rust]: https://rust-lang.org/
