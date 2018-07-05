@@ -41,7 +41,7 @@ fn main() {
                     .collect();
 
                 println!("==================");
-                println!("FOUND POSSIBLE MATCH!");
+                println!("FOUND POSSIBLE KEY!");
                 println!("KEY: {} {:?}", key, shifts);
                 println!("TEXT: {}... (truncated)", text);
                 println!("==================");

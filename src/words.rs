@@ -16,6 +16,7 @@ type F = fn(Option<String>) -> Option<String>;
 /// spaces, commas or other characters.
 ///
 /// See the `char::is_alphabetic()` method for a definition on what characters count as alphabetic.
+// TODO: the current implementation fails on words like `I've`
 pub trait Words {
 
     /// Morph an iterator of characters to an iterator of strings outputing words.
