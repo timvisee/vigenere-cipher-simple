@@ -1,3 +1,5 @@
+#![feature(euclidean_division)]
+
 extern crate rayon;
 
 use std::fs::read_to_string;
@@ -5,13 +7,9 @@ use std::fs::read_to_string;
 use rayon::prelude::*;
 
 fn main() {
-    // Read the cipher text, and a dictionary
-    let cipher = read_to_string("challenge.txt")
-        .expect("failed to read cipher text at challenge.txt");
-    let mut dict = read_to_string("/usr/share/dict/american-english-insane")
-        .expect("failed to read dictionary at /usr/share/dict/american-english-insane");
-    dict += &read_to_string("/usr/share/dict/british-english-insane")
-        .expect("failed to read dictionary at /usr/share/dict/british-english-insane");
+    // Read the ciphertext, and a dictionary
+    let cipher = read_to_string("ciphertext.txt").expect("failed to read ciphertext.txt");
+    let dict = read_to_string("dictionary.txt").expect("failed to read dictionary.txt");
 
     // Collect uppercase dictionary words in a vector
     let mut dict: Vec<String> = dict
@@ -26,33 +24,31 @@ fn main() {
         .map(|s| s.as_str())
         .collect();
 
+    // Brute force each dictionary word as key
     dict.par_iter()
         .for_each(|key| {
-            // Build the shifting vector
+            // Build a vector containing the shift values
             let shifts = key.chars()
-                .map(|c| c as u8 - 'A' as u8)
+                .map(|c| c as i16 - 'A' as i16)
                 .collect();
 
-            // Shift
+            // Shift the ciphertext
             let output: String = shift_input(&cipher, &shifts);
 
-            // Loop through the words
-            let found = output
+            // Test whether this may be a match by comparing against the dictionary
+            let is_match = output
                 .split_terminator(|c: char| c.is_whitespace())
                 .filter(|word| word.len() >= 5)
                 .take(8)
-                //.inspect(|word| println!("FOUND WORD: {}", word))
                 .filter(|word| dict.binary_search(word).is_ok())
-                //.inspect(|word| println!("FOUND WORD: {}", word))
                 .count() >= 3;
 
-            if found {
+            // Report
+            if is_match {
                 println!("==================");
-                println!("HORRAAYYYY!!!!");
-                println!("KEY: {}", key);
-                println!("SHIFTS: {:?}", shifts);
-                //println!("TRY: {:?}", &output[0..upto]);
-                println!("TRY: {:?}", output);
+                println!("FOUND POSSIBLE MATCH!");
+                println!("KEY: {} {:?}", key, shifts);
+                println!("TEXT: {}...", output.chars().take(170).collect::<String>());
                 println!("==================");
             }
         });
@@ -63,30 +59,17 @@ fn main() {
 /// Shift the given input, by the given indices.
 /// Each alpha character increases the current index by one,
 /// clipping at the number of shifts given.
-fn shift_input(cipher: &str, shifts: &Vec<u8>) -> String {
-    // Define how to shift each 
+fn shift_input(cipher: &str, shifts: &Vec<i16>) -> String {
     let mut i = 0;
-    cipher
-        .chars()
-        .map(|c| {
-            // Define the indiced char
-            let t = (i, c);
-
-            // Increase the shift index
+    cipher.chars()
+        .map(|mut c| {
+            // Shift alphabetic characters as specified, increase the shifting index
             if c.is_alphabetic() {
+                c = ((c as i16 - 'A' as i16 - shifts[i]).mod_euc(26) + 'A' as i16) as u8 as char;
                 i = (i + 1) % shifts.len();
             }
 
-            t
-        })
-        .map(|(i, c)| {
-            // Only actually shift alpha characters
-            if !c.is_alphabetic() {
-                return c;
-            }
-
-            // Shift by the defined index
-            (((c as u8 - 'A' as u8 + shifts[i]) % 26) + 'A' as u8) as char
+            c
         })
         .collect()
 }
