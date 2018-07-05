@@ -32,13 +32,26 @@ each timing 10 runs.
 
 Note that the program attempts all possible words, and doesn't quit after
 a possible key has been found (which would make the total process even quicker).
-The program does find the correct key, but it is omitted from the output below.
 
 ```
 hyperfine './target/release/vigenere-cipher-simple'
 # Time (mean ± σ):   41.0 ms ±  1.1 ms
 # Range (min … max): 40.0 ms … 47.1 ms
 # [User: 40.0 ms, System: 47.1 ms]
+```
+
+The following answer is outputted:
+
+```
+==================
+FOUND POSSIBLE KEY!
+KEY: BEAUTIFUL [1, 4, 0, 20, 19, 8, 5, 20, 11]
+TEXT: AS SUMMER CAME TO AN END, ALL OF THE FLOWERS IN THE GARDEN
+WANTED TO KNOW WHICH FLOWER WAS THE BEST: THE PINK ROSES
+SAID, ”WE ARE THE BEST BECAUSE WE WERE THE FIRST FLOWERS
+TO BLOOM IN THE SPRING.” THE WHITE DAISIES SAID, ”OH NO, WE
+ARE THE BEST BECA... (truncated)
+==================
 ```
 
 For brute forcing I believe this is quite quick, even though it's using a
