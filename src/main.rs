@@ -22,7 +22,7 @@ fn main() {
 
     // Brute force dictionary keys without special characters concurrently
     dict.par_iter()
-        .filter(|word| word.chars().all(|c| c.is_alphabetic()))
+        .filter(|word| word.chars().all(|c| c.is_ascii_alphabetic()))
         .for_each(|key| {
             // Build a vector containing the shift values
             let shifts = key.chars()
@@ -65,7 +65,7 @@ fn shift_iterator<'a>(ciphertext: &'a str, shifts: &'a Vec<i16>)
     let mut shifts = shifts.iter().cycle();
     ciphertext.chars()
         .map(move |c| {
-            if c.is_alphabetic() {
+            if c.is_ascii_alphabetic() {
                 let s = shifts.next().unwrap();
                 ((c as i16 - 'A' as i16 - s).mod_euc(26) + 'A' as i16) as u8 as char
             } else {

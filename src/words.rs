@@ -15,7 +15,7 @@ type F = fn(Option<String>) -> Option<String>;
 /// All non-alphanumeric characters are omitted from the output, this it will not contain any
 /// spaces, commas or other characters.
 ///
-/// See the `char::is_alphabetic()` method for a definition on what characters count as alphabetic.
+/// See the `char::is_ascii_alphabetic()` method for a definition on what characters count as alphabetic.
 pub trait Words {
 
     /// Morph an iterator of characters to an iterator of strings outputing words.
@@ -33,7 +33,7 @@ pub trait Words {
     {
         // A scan function to collect non-whitespace characters to yield strings at each whitespace
         let scan: S = |state: &mut String, c: char| {
-            if c.is_alphabetic() {
+            if c.is_ascii_alphabetic() {
                 state.push(c);
             } else if !state.is_empty() {
                 return Some(Some(state.split_off(0)));
