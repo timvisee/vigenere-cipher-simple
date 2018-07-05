@@ -2,74 +2,74 @@
 
 extern crate rayon;
 
-use std::fs::read_to_string;
+mod words;
 
+use std::fs::read_to_string;
 use rayon::prelude::*;
+use words::Words;
 
 fn main() {
     // Read the ciphertext, and a dictionary
-    let cipher = read_to_string("ciphertext.txt").expect("failed to read ciphertext.txt");
+    let ciphertext = read_to_string("ciphertext.txt").expect("failed to read ciphertext.txt");
     let dict = read_to_string("dictionary.txt").expect("failed to read dictionary.txt");
 
     // Collect uppercase dictionary words in a vector
     let mut dict: Vec<String> = dict
-        .split_terminator(|c: char| c.is_whitespace())
-        .filter(|word| word.chars().all(|c| c.is_alphabetic()))
+        .split_terminator(char::is_whitespace)
         .map(|word| word.to_uppercase())
         .collect();
     dict.sort_unstable();
-    dict.dedup();
-    let dict: Vec<&str> = dict
-        .iter()
-        .map(|s| s.as_str())
-        .collect();
 
-    // Brute force each dictionary word as key
+    // Brute force dictionary keys without special characters concurrently
     dict.par_iter()
+        .filter(|word| word.chars().all(|c| c.is_alphabetic()))
         .for_each(|key| {
             // Build a vector containing the shift values
             let shifts = key.chars()
                 .map(|c| c as i16 - 'A' as i16)
                 .collect();
 
-            // Shift the ciphertext
-            let output: String = shift_input(&cipher, &shifts);
-
-            // Test whether this may be a match by comparing against the dictionary
-            let is_match = output
-                .split_terminator(|c: char| c.is_whitespace())
-                .filter(|word| word.len() >= 5)
+            // Build a decryption iterator, compare some words at a dictionary, report matches
+            if shift_iterator(&ciphertext, &shifts)
+                .words()
                 .take(8)
-                .filter(|word| dict.binary_search(word).is_ok())
-                .count() >= 3;
+                .all(|ref word| dict.binary_search(word).is_ok())
+            {
+                // Decrypt only the first 250 characters to report
+                let text: String = shift_iterator(&ciphertext, &shifts)
+                    .take(250)
+                    .collect();
 
-            // Report
-            if is_match {
                 println!("==================");
                 println!("FOUND POSSIBLE MATCH!");
                 println!("KEY: {} {:?}", key, shifts);
-                println!("TEXT: {}...", output.chars().take(170).collect::<String>());
+                println!("TEXT: {}... (truncated)", text);
                 println!("==================");
             }
         });
-
-    println!("DONE");
 }
 
-/// Shift the given input, by the given indices.
-/// Each alpha character increases the current index by one,
-/// clipping at the number of shifts given.
-fn shift_input(cipher: &str, shifts: &Vec<i16>) -> String {
-    let mut i = 0;
-    cipher.chars()
-        .map(|mut c| {
-            // Shift alphabetic characters as specified, increase the shifting index
+/// Build an iterator to shift the given input string as defined by the `shifts` vector.
+/// The returned iterator is lazy in the sense that only the characters being consumed will be
+/// shifted as this is great for performance.
+///
+/// The sequence of shifts will be used to shift each alphabetic character each with their own next
+/// shift value. The list of shifts is cycled.
+///
+/// The defined shift values will be subtracted from characters as this function should be used for
+/// decryption. If a shift value of 2 is given, the character `C` will be shifted to `A`.
+fn shift_iterator<'a>(ciphertext: &'a str, shifts: &'a Vec<i16>)
+    -> impl Iterator<Item = char> + 'a
+{
+    // Cycle the shifting sequence and build the shifting iterator
+    let mut shifts = shifts.iter().cycle();
+    ciphertext.chars()
+        .map(move |c| {
             if c.is_alphabetic() {
-                c = ((c as i16 - 'A' as i16 - shifts[i]).mod_euc(26) + 'A' as i16) as u8 as char;
-                i = (i + 1) % shifts.len();
+                let s = shifts.next().unwrap();
+                ((c as i16 - 'A' as i16 - s).mod_euc(26) + 'A' as i16) as u8 as char
+            } else {
+                c
             }
-
-            c
         })
-        .collect()
 }
