@@ -94,6 +94,10 @@ is installed on your system which may be done using [rustup][rustup].
 Run the following commands (Linux/macOS) to compile and run the solver:
 
 ```bash
+# Switch to nightly and update
+rustup default nightly
+rustup update nightly
+
 # Clone the repository
 git clone https://gitlab.com/timvisee/vigenere-cipher-simple-git
 cd vigenere-cipher-simple
