@@ -1,0 +1,23 @@
+image: "rust:slim"
+
+stages:
+	- test
+
+# Install Rust nightly
+before_script:
+	- |
+		rustup install nightly
+		rustup default nightly
+	- |
+		rustc --version
+		cargo --version
+
+check-and-test:
+	stage: test
+	script:
+		- cargo check --verbose
+		- cargo test --verbose
+    - cargo build --release
+
+		# Run a basic benchmark
+		- time ./target/release/vigenere-cipher-simple
