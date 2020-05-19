@@ -88,16 +88,12 @@ the following things:
   as possible to fully utilize a CPU core.
 
 ## Usage
-To run this solver, first make sure [Rust][rust] (`nightly`, `v1.28` or higher)
+To run this solver, first make sure [Rust][rust] (`v1.39` or higher)
 is installed on your system which may be done using [rustup][rustup].
 
 Run the following commands (Linux/macOS) to compile and run the solver:
 
 ```bash
-# Switch to nightly and update
-rustup default nightly
-rustup update nightly
-
 # Clone the repository
 git clone https://gitlab.com/timvisee/vigenere-cipher-simple-git
 cd vigenere-cipher-simple

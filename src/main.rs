@@ -1,11 +1,9 @@
-#![feature(euclidean_division)]
-
 extern crate rayon;
 
 mod words;
 
-use std::fs::read_to_string;
 use rayon::prelude::*;
+use std::fs::read_to_string;
 use words::Words;
 
 fn main() {
@@ -25,9 +23,7 @@ fn main() {
         .filter(|word| word.chars().all(|c| c.is_ascii_alphabetic()))
         .for_each(|key| {
             // Build a vector containing the shift values
-            let shifts = key.chars()
-                .map(|c| c as i16 - 'A' as i16)
-                .collect();
+            let shifts = key.chars().map(|c| c as i16 - 'A' as i16).collect();
 
             // Build a decryption iterator, compare some words at a dictionary, report matches
             if shift_iterator(&ciphertext, &shifts)
@@ -36,9 +32,7 @@ fn main() {
                 .all(|ref word| dict.binary_search(word).is_ok())
             {
                 // Decrypt only the first 250 characters to report
-                let text: String = shift_iterator(&ciphertext, &shifts)
-                    .take(250)
-                    .collect();
+                let text: String = shift_iterator(&ciphertext, &shifts).take(250).collect();
 
                 println!("==================");
                 println!("FOUND POSSIBLE KEY!");
@@ -58,18 +52,18 @@ fn main() {
 ///
 /// The defined shift values will be subtracted from characters as this function should be used for
 /// decryption. If a shift value of 2 is given, the character `C` will be shifted to `A`.
-fn shift_iterator<'a>(ciphertext: &'a str, shifts: &'a Vec<i16>)
-    -> impl Iterator<Item = char> + 'a
-{
+fn shift_iterator<'a>(
+    ciphertext: &'a str,
+    shifts: &'a Vec<i16>,
+) -> impl Iterator<Item = char> + 'a {
     // Cycle the shifting sequence and build the shifting iterator
     let mut shifts = shifts.iter().cycle();
-    ciphertext.chars()
-        .map(move |c| {
-            if c.is_ascii_alphabetic() {
-                let s = shifts.next().unwrap();
-                ((c as i16 - 'A' as i16 - s).mod_euc(26) + 'A' as i16) as u8 as char
-            } else {
-                c
-            }
-        })
+    ciphertext.chars().map(move |c| {
+        if c.is_ascii_alphabetic() {
+            let s = shifts.next().unwrap();
+            ((c as i16 - 'A' as i16 - s).rem_euclid(26) + 'A' as i16) as u8 as char
+        } else {
+            c
+        }
+    })
 }
